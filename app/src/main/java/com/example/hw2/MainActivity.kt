@@ -73,26 +73,27 @@ class MainActivity : AppCompatActivity() {
 
         if (!grades.isEmpty()) {
             grade = grades.get(0)
-            hwList.add(grade.hw1)
-            hwList.add(grade.hw2)
-            hwList.add(grade.hw3)
-            hwList.add(grade.hw4)
-            hwList.add(grade.hw5)
+            if(grade.hw1.length > 0 ) hwList.add(grade.hw1)
+            if(grade.hw2.length > 0 )  hwList.add(grade.hw2)
+            if(grade.hw3.length > 0 )hwList.add(grade.hw3)
+            if(grade.hw4.length > 0 )  hwList.add(grade.hw4)
+            if(grade.hw5.length > 0 )hwList.add(grade.hw5)
 
 
-
-
-            m1Input.setText(grade.m1.toString())
-            m2Input.setText(grade.m2.toString())
-            partInput.setText(grade.part.toString())
-            presentInput.setText(grade.present.toString())
-            projectInput.setText(grade.project.toString())
-
+            if(grade.m1.length > 0) m1Input.setText(grade.m1.toString())
+            if(grade.m2.length > 0) m2Input.setText(grade.m2.toString())
+            if(grade.part.length > 0)partInput.setText(grade.part.toString())
+            if(grade.present.length > 0)presentInput.setText(grade.present.toString())
+            if(grade.project.length > 0)projectInput.setText(grade.project.toString())
+            if(grade.final.length > 0)finalGrade.setText(grade.final.toString())
         }
         hwAdapter = HomeworkAdapter(this, hwList)
         recyclerView.adapter = hwAdapter
         if (grades.isEmpty()) {
             grade = Grade()
+            Executors.newSingleThreadExecutor().execute {
+                gradeDao.insert(grade)
+            }
         }
 
 
@@ -198,11 +199,24 @@ class MainActivity : AppCompatActivity() {
             if (validation.inBounds(hwDouble)) {
                 if (hwAdapter.itemCount < 4) {
 
-                    hwList.add("Homework" + (hwAdapter.itemCount + 1) + " = " + hwGrade)
-                    hwAdapter.notifyDataSetChanged()
-                } else if (hwAdapter.itemCount == 4) {
+                    var temp = "Homework" + (hwAdapter.itemCount + 1) + " = " + hwGrade
+                    hwList.add(temp)
+                    if(hwAdapter.itemCount == 1 ) grade.hw1 = temp
+                    else if(hwAdapter.itemCount == 2 ) grade.hw2 = temp
+                    else if(hwAdapter.itemCount == 3 ) grade.hw3 = temp
+                    else if(hwAdapter.itemCount == 4 ) grade.hw4 = temp
+                    Executors.newSingleThreadExecutor().execute {
+                        gradeDao.update(grade)
+                    }
 
-                    hwList.add("Homework" + (hwAdapter.itemCount + 1) + " = " + hwGrade)
+                    hwAdapter.notifyDataSetChanged()
+                } else if (hwAdapter.itemCount == 5) {
+                    var temp = "Homework" + (hwAdapter.itemCount + 1) + " = " + hwGrade
+                    hwList.add(temp)
+                    grade.hw5 = temp
+                    Executors.newSingleThreadExecutor().execute {
+                        gradeDao.update(grade)
+                    }
                     addButton.isEnabled = false
                     hwAdapter.notifyDataSetChanged()
                 } else {
@@ -219,6 +233,17 @@ class MainActivity : AppCompatActivity() {
             hwList.clear()
 
             hwAdapter.notifyDataSetChanged()
+            grade.hw1 = ""
+            grade.hw2 = ""
+            grade.hw3 = ""
+            grade.hw4 = ""
+            grade.hw5 = ""
+
+
+
+            Executors.newSingleThreadExecutor().execute {
+                gradeDao.update(grade)
+            }
 
             addButton.isEnabled = true
         }
@@ -265,18 +290,11 @@ class MainActivity : AppCompatActivity() {
                 grade.hw5 = hwList.get(4)
                 grade.final = result.toString()
 
-                if (!grades.isEmpty()) {
+
 
                     Executors.newSingleThreadExecutor().execute {
                         gradeDao.update(grade)
                     }
-                } else if (grades.isEmpty()) {
-
-
-                    Executors.newSingleThreadExecutor().execute {
-                        gradeDao.insert(grade)
-                    }
-                }
 
 
             } else Toast.makeText(this, "Invalid Input", Toast.LENGTH_SHORT).show()
